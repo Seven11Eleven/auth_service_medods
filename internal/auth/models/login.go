@@ -2,6 +2,8 @@ package models
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type LoginRequest struct {
@@ -21,4 +23,5 @@ type LoginService interface {
 	CreateAccessToken(user *User, expired int) (accessToken string, err error)
 	CreateRefreshToken(user *User, expired int) (refreshToken string, err error)
 	RevokeTokens(ctx context.Context, user *User) error // на всякий
+	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 }

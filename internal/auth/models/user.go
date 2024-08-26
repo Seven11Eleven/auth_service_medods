@@ -27,4 +27,5 @@ type UserRepository interface {
 	GetRefreshToken(ctx context.Context, email string) (hashedToken string, err error)
 	DeleteUserRefreshTokenByEmail(ctx context.Context, email string) (err error)
 	GetUserByEmail(ctx context.Context, email string) (user *User,  err error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 }

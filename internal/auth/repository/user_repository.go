@@ -12,6 +12,55 @@ type userRepository struct {
 	db *pgx.Conn
 }
 
+// GetUserByID implements models.UserRepository.
+func (u *userRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	logger.Logger.Infof("Запрос юзера по guid: %s", id)
+	query := `
+		SELECT 
+			u.username, u.password, u.email, u.salt, u.refresh_token
+		FROM
+			users u
+		WHERE
+			u.id = $1
+	`
+
+	rows, err := u.db.Query(ctx, query, id)
+	if err != nil {
+		logger.Logger.WithError(err).Error("Ошибка запроса в GetUserByID")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var user *models.User
+
+	for rows.Next() {
+		var userName, userPass, userSalt, userEmail, userRefreshToken string
+
+		err := rows.Scan(&userName, &userPass, &userEmail, &userSalt, &userRefreshToken)
+		if err != nil {
+			logger.Logger.WithError(err).Error("Ошибка сканирования в GetUserByID")
+			return nil, err
+		}
+
+		if user == nil {
+			user = &models.User{
+				ID:           id,
+				Username:     userName,
+				Password:     userPass,
+				Email:        userEmail,
+				Salt:         userSalt,
+				RefreshToken: userRefreshToken,
+			}
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Logger.WithError(err).Error("Ошибка после обработки строк в GetUserByID")
+		return nil, err
+	}
+
+	return user, nil}
+
 // GetUserByEmail implements models.UserRepository.
 func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (user *models.User, err error) {
 	logger.Logger.Infof("Запрос юзера по имейлу: %s", email)

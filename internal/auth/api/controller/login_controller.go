@@ -8,6 +8,7 @@ import (
 	"github.com/Seven11Eleven/auth_service_medods/internal/logger"
 	"github.com/Seven11Eleven/auth_service_medods/internal/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type LoginController struct {
@@ -67,4 +68,45 @@ func (lc *LoginController) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, loginResp)
+}
+func (lc *LoginController) TokenByGUID(c *gin.Context) {
+	userID := c.Query("userID")
+	parsedUserID, err := uuid.Parse(userID)
+	if err != nil {
+		logger.Logger.WithError(err).Error("Некорректный GUID пользователя")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный GUID пользователя"})
+		return
+	}
+
+	user, err := lc.LoginService.GetUserByID(c, parsedUserID)
+	if err != nil {
+		logger.Logger.WithError(err).Error("юзер не найден")
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrUserNotFound})
+		return
+	}
+
+	user.IPAddress = c.ClientIP()
+	logger.Logger.Infof("IP-адрес пользователя: %s", user.IPAddress)
+
+	accessToken, err := lc.LoginService.CreateAccessToken(user, lc.Env.AccessTokenExpiryHour)
+	if err != nil {
+		logger.Logger.WithError(err).Error("Ошибка создания Акцес токена")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка создания акцес токена"})
+		return
+	}
+	refreshToken, err := lc.LoginService.CreateRefreshToken(user, lc.Env.RefreshTokenExpiryHour)
+	if err != nil {
+		logger.Logger.WithError(err).Error("Ошибка создания рефреш токена")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка создания рефреш токена"})
+		return
+	}
+
+	logger.Logger.Infof("Пользователь %s успешно получил токены", user.Username)
+
+	tokenResp := models.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	c.JSON(http.StatusOK, tokenResp)
 }

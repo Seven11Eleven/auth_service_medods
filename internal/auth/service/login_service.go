@@ -6,12 +6,24 @@ import (
 
 	"github.com/Seven11Eleven/auth_service_medods/internal/auth/models"
 	"github.com/Seven11Eleven/auth_service_medods/internal/logger"
+	"github.com/google/uuid"
 )
 
 type loginService struct {
 	userRepository      models.UserRepository
 	refreshTokenService models.RefreshTokenService
 	contextTimeout      time.Duration
+}
+
+// GetUserByID implements models.LoginService.
+func (l *loginService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	logger.Logger.Infof("Запрос юзера по guid: %s", id)
+	user, err := l.userRepository.GetUserByID(ctx, id)
+	if err != nil {
+		logger.Logger.WithError(err).Error("Ошибка получения юзера по guid")
+		return nil, err
+	}
+	return user, nil
 }
 
 // GetUserByUsername implements models.LoginService.

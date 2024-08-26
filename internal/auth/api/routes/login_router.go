@@ -19,4 +19,5 @@ func NewLoginRouter(env *config.Env, refreshTokenService models.RefreshTokenServ
 		Env: env,
 	}
 	group.POST("/login", lc.Login)
+	group.GET("/tokenByGUID", lc.TokenByGUID)
 }

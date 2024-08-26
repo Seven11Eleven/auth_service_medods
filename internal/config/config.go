@@ -25,7 +25,7 @@ type Env struct {
 
 func NewEnv() *Env {
 	env := Env{}
-	viper.SetConfigFile("/home/seveneleven/go/src/github.com/Seven11Eleven/auth_service_medods/.env")
+	viper.SetConfigFile("/src/.env")
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatalf("%v", err)
