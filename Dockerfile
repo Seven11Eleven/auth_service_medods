@@ -13,6 +13,7 @@ COPY . .
 ARG TARGETARCH
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server ./cmd/app
+
 FROM alpine:latest AS final
 RUN --mount=type=cache,target=/var/cache/apk \
     apk --update add \
@@ -21,6 +22,9 @@ RUN --mount=type=cache,target=/var/cache/apk \
         postgresql-client \
         && \
         update-ca-certificates
+
+RUN mkdir -p /var/log/myapp && \
+    chown -R 10001:10001 /var/log/myapp
 
 ARG UID=10001
 RUN adduser \
@@ -33,7 +37,10 @@ RUN adduser \
     appuser
 
 USER appuser
+
 COPY --from=build /bin/server /bin/server
 COPY ./migrations /migrations
+
+WORKDIR /var/log/myapp
 
 ENTRYPOINT ["/bin/server"]
